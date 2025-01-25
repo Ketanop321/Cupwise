@@ -1,34 +1,37 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './hooks/useAuth';
 import Navbar from './components/Navbar';
-import Home from './pages/Home';
-import Dashboard from './pages/Dashboard';
-import Challenges from './pages/Challenges';
-import Community from './pages/Community';
-import Profile from './pages/Profile';
-import Footer from './components/Footer';
+import Dashboard from './components/Dashboard';
+import Community from './components/Community';
+import Profile from './components/Profile';
+import Auth from './components/Auth';
+import Home from './components/Home';
 
-function App() {
+export default function App() {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-600"></div>
+      </div>
+    );
+  }
+
   return (
-    <AuthProvider>
-      <Router>
-        <div className="min-h-screen bg-gray-50 flex flex-col">
-          <Navbar />
-          <main className="flex-grow">
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/challenges" element={<Challenges />} />
-              <Route path="/community" element={<Community />} />
-              <Route path="/profile" element={<Profile />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
-      </Router>
-    </AuthProvider>
+    <BrowserRouter>
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <main>
+          <Routes>
+            <Route path="/" element={user ? <Dashboard /> : <Home />} />
+            <Route path="/community" element={user ? <Community /> : <Navigate to="/auth" />} />
+            <Route path="/profile" element={user ? <Profile /> : <Navigate to="/auth" />} />
+            <Route path="/auth" element={!user ? <Auth /> : <Navigate to="/" />} />
+          </Routes>
+        </main>
+      </div>
+    </BrowserRouter>
   );
 }
-
-export default App

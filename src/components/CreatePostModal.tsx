@@ -13,37 +13,22 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }: Crea
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [error, setError] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
-    
-    setIsSubmitting(true);
     setError('');
 
     try {
-      // First ensure the profile exists
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('id', user.id)
-        .single();
-
-      if (!profile) {
-        throw new Error('Profile not found');
-      }
-
       const { error: insertError } = await supabase
         .from('posts')
         .insert([
           {
-            user_id: user.id,
-            title: title.trim(),
-            content: content.trim(),
+            user_id: user?.id,
+            title,
+            content,
           },
         ]);
 
@@ -54,9 +39,7 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }: Crea
       setTitle('');
       setContent('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred while creating the post');
-    } finally {
-      setIsSubmitting(false);
+      setError(err instanceof Error ? err.message : 'An error occurred');
     }
   };
 
@@ -89,7 +72,6 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }: Crea
               onChange={(e) => setTitle(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
               required
-              disabled={isSubmitting}
             />
           </div>
 
@@ -103,16 +85,14 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }: Crea
               rows={4}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
               required
-              disabled={isSubmitting}
             />
           </div>
 
           <button
             type="submit"
-            disabled={isSubmitting}
-            className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
           >
-            {isSubmitting ? 'Creating Post...' : 'Create Post'}
+            Create Post
           </button>
         </form>
       </div>
