@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Coffee, Home, BarChart2, Trophy, Users } from 'lucide-react';
+import { Coffee, Home, BarChart2, Trophy, Users, UserCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import AuthModal from './AuthModal';
 
@@ -38,12 +38,21 @@ function Navbar() {
 
           <div className="hidden md:flex items-center space-x-4">
             {user ? (
-              <button
-                onClick={() => signOut()}
-                className="bg-white text-green-600 px-4 py-2 rounded-lg font-medium hover:bg-green-50"
-              >
-                Sign Out
-              </button>
+              <div className="flex items-center space-x-4">
+                <Link
+                  to="/profile"
+                  className="flex items-center space-x-2 hover:text-green-200"
+                >
+                  <UserCircle className="h-5 w-5" />
+                  <span>Profile</span>
+                </Link>
+                <button
+                  onClick={() => signOut()}
+                  className="bg-white text-green-600 px-4 py-2 rounded-lg font-medium hover:bg-green-50"
+                >
+                  Sign Out
+                </button>
+              </div>
             ) : (
               <button
                 onClick={() => setIsAuthModalOpen(true)}

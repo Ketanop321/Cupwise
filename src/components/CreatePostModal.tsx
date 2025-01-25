@@ -13,48 +13,50 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }: Crea
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
 
   if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
+    
+    setIsSubmitting(true);
     setError('');
 
-    // Ensure user is authenticated before submitting
-    if (!user) {
-      setError('You must be logged in to create a post');
-      return;
-    }
-
-    // Verify user ID before insertion
-    const userId = user.id;
-    if (!userId) {
-      setError('Invalid user authentication');
-      return;
-    }
-
     try {
-      const { data, error: insertError } = await supabase
-        .from('posts')
-        .insert({
-          user_id: userId,
-          title,
-          content,
-        });
+      // First ensure the profile exists
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .single();
 
-      if (insertError) {
-        console.error('Supabase Insert Error:', insertError);
-        setError(insertError.message || 'An error occurred');
-        return;
+      if (!profile) {
+        throw new Error('Profile not found');
       }
+
+      const { error: insertError } = await supabase
+        .from('posts')
+        .insert([
+          {
+            user_id: user.id,
+            title: title.trim(),
+            content: content.trim(),
+          },
+        ]);
+
+      if (insertError) throw insertError;
 
       onPostCreated();
       onClose();
       setTitle('');
       setContent('');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : 'An error occurred while creating the post');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -87,6 +89,7 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }: Crea
               onChange={(e) => setTitle(e.target.value)}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
               required
+              disabled={isSubmitting}
             />
           </div>
 
@@ -100,14 +103,16 @@ export default function CreatePostModal({ isOpen, onClose, onPostCreated }: Crea
               rows={4}
               className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500"
               required
+              disabled={isSubmitting}
             />
           </div>
 
           <button
             type="submit"
-            className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors"
+            disabled={isSubmitting}
+            className="w-full bg-green-600 text-white py-2 px-4 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            Create Post
+            {isSubmitting ? 'Creating Post...' : 'Create Post'}
           </button>
         </form>
       </div>

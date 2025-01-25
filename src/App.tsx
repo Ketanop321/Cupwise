@@ -6,6 +6,7 @@ import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
 import Challenges from './pages/Challenges';
 import Community from './pages/Community';
+import Profile from './pages/Profile';
 import Footer from './components/Footer';
 
 function App() {
@@ -20,6 +21,7 @@ function App() {
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/challenges" element={<Challenges />} />
               <Route path="/community" element={<Community />} />
+              <Route path="/profile" element={<Profile />} />
             </Routes>
           </main>
           <Footer />
@@ -29,4 +31,4 @@ function App() {
   );
 }
 
-export default App;
+export default App

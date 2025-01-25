@@ -24,34 +24,73 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     // Listen for changes on auth state
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+
+      if (currentUser) {
+        try {
+          // First, check if profile exists
+          const { data: existingProfile, error: fetchError } = await supabase
+            .from('profiles')
+            .select('*')
+            .eq('id', currentUser.id)
+            .maybeSingle();
+
+          if (fetchError) throw fetchError;
+
+          // If profile doesn't exist, create it
+          if (!existingProfile) {
+            const { error: insertError } = await supabase
+              .from('profiles')
+              .insert({
+                id: currentUser.id,
+                username: currentUser.email?.split('@')[0] || 'user',
+                full_name: currentUser.email?.split('@')[0] || 'New User',
+                total_cups_saved: 0,
+                points: 0,
+              });
+
+            if (insertError) {
+              console.error('Error creating profile:', insertError);
+            }
+          }
+        } catch (err) {
+          console.error('Error managing profile:', err);
+        }
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
   const signUp = async (email: string, password: string, fullName: string) => {
-    const { data: { user }, error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+      });
 
-    if (error) throw error;
+      if (error) throw error;
 
-    if (user) {
-      // Create profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .insert([
-          {
-            id: user.id,
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert({
+            id: data.user.id,
             username: email.split('@')[0],
             full_name: fullName,
-          },
-        ]);
+            total_cups_saved: 0,
+            points: 0,
+          });
 
-      if (profileError) throw profileError;
+        if (profileError) {
+          console.error('Profile creation error:', profileError);
+          // Don't throw here, as the user is already created
+        }
+      }
+    } catch (err) {
+      throw err;
     }
   };
 
