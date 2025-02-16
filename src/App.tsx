@@ -1,37 +1,83 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
-import { useAuth } from './hooks/useAuth';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Leaf } from 'lucide-react';
+import { useAuth, AuthProvider } from './lib/AuthContext';
 import Navbar from './components/Navbar';
-import Dashboard from './components/Dashboard';
-import Community from './components/Community';
-import Profile from './components/Profile';
-import Auth from './components/Auth';
-import Home from './components/Home';
+import Home from './pages/Home';
+import Dashboard from './pages/Dashboard';
+import Community from './pages/Community';
+import Challenges from './pages/Challenges';
+import Profile from './pages/Profile';
+import Auth from './pages/Auth';
 
-export default function App() {
-  const { user, loading } = useAuth();
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+}
 
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-green-600"></div>
-      </div>
-    );
-  }
+const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/auth" />;
+  return <>{children}</>;
+};
 
+function App() {
   return (
-    <BrowserRouter>
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <main>
+    <Router>
+      <AuthProvider>
+        <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-100">
+          <Navbar />
           <Routes>
-            <Route path="/" element={user ? <Dashboard /> : <Home />} />
-            <Route path="/community" element={user ? <Community /> : <Navigate to="/auth" />} />
-            <Route path="/profile" element={user ? <Profile /> : <Navigate to="/auth" />} />
-            <Route path="/auth" element={!user ? <Auth /> : <Navigate to="/" />} />
+            <Route path="/" element={<Home />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route
+              path="/dashboard"
+              element={
+                <ProtectedRoute>
+                  <Dashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/community"
+              element={
+                <ProtectedRoute>
+                  <Community />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/challenges"
+              element={
+                <ProtectedRoute>
+                  <Challenges />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute>
+                  <Profile />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
-        </main>
-      </div>
-    </BrowserRouter>
+          
+          <footer className="bg-green-800 text-white py-6 mt-20">
+            <div className="container mx-auto px-4">
+              <div className="flex items-center justify-center space-x-2 mb-4">
+                <Leaf className="h-6 w-6" />
+                <span className="text-xl font-semibold">EcoCup Initiative</span>
+              </div>
+              <p className="text-center text-green-200">
+                Together we can make a difference. Save a cup, save the planet.
+              </p>
+            </div>
+          </footer>
+        </div>
+      </AuthProvider>
+    </Router>
   );
 }
+
+export default App;
